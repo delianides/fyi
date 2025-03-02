@@ -21,7 +21,6 @@ const app = new Hono<{ Bindings: Env }>();
 const authMiddleware = async (c: any, next: any) => {
 	const authHeader = c.req.header('Authorization');
 	const expectedAuthToken = c.env.AUTH_KEY;
-	console.log(authHeader, expectedAuthToken);
 
 	if (authHeader !== `Bearer ${expectedAuthToken}`) {
 		return c.json({ error: 'Unauthorized' }, 401);
@@ -31,12 +30,12 @@ const authMiddleware = async (c: any, next: any) => {
 
 // POST route to create a short URL (with authentication)
 app.post('/', authMiddleware, async (c) => {
-	const longUrl = c.req.query('long_url');
-
+	const { longUrl } = await c.req.json();
 	if (!longUrl) {
 		return c.json({ error: 'Invalid input' }, 400);
 	}
 
+	console.log('Long Url: ', longUrl);
 	// Generate a random short code
 	const shortCode = Math.random().toString(36).substring(2, 8);
 
