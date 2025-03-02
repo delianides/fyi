@@ -18,7 +18,7 @@ import { poweredBy } from 'hono/powered-by';
 const app = new Hono<{ Bindings: Env }>();
 
 // Middleware to check the authentication header for POST requests
-const authMiddleware = async (c, next) => {
+const authMiddleware = async (c: any, next: any) => {
 	const authHeader = c.req.header('Authorization');
 	const expectedAuthToken = c.env.AUTH_KEY;
 	console.log(authHeader, expectedAuthToken);
@@ -31,9 +31,9 @@ const authMiddleware = async (c, next) => {
 
 // POST route to create a short URL (with authentication)
 app.post('/', authMiddleware, async (c) => {
-	const { long_url } = await c.req.json();
+	const longUrl = c.req.query('long_url');
 
-	if (!long_url) {
+	if (!longUrl) {
 		return c.json({ error: 'Invalid input' }, 400);
 	}
 
@@ -41,7 +41,7 @@ app.post('/', authMiddleware, async (c) => {
 	const shortCode = Math.random().toString(36).substring(2, 8);
 
 	// Store the long URL with the short code as the key
-	await c.env.URLS.put(shortCode, long_url);
+	await c.env.URLS.put(shortCode, longUrl);
 
 	return c.json({ code: shortCode, url: `https://${c.env.DOMAIN}/${shortCode}` });
 });
