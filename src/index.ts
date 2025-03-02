@@ -9,10 +9,57 @@
  * `Env` object can be regenerated with `npm run cf-typegen`.
  *
  * Learn more at https://developers.cloudflare.com/workers/
+ *
  */
 
-export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		return new Response('Hello World!');
-	},
-} satisfies ExportedHandler<Env>;
+import { Hono } from 'hono';
+import { poweredBy } from 'hono/powered-by';
+
+const app = new Hono<{ Bindings: Env }>();
+
+// Middleware to check the authentication header for POST requests
+const authMiddleware = async (c, next) => {
+	const authHeader = c.req.header('Authorization');
+	const expectedAuthToken = c.env.AUTH_KEY;
+	console.log(authHeader, expectedAuthToken);
+
+	if (authHeader !== `Bearer ${expectedAuthToken}`) {
+		return c.json({ error: 'Unauthorized' }, 401);
+	}
+	await next();
+};
+
+// POST route to create a short URL (with authentication)
+app.post('/', authMiddleware, async (c) => {
+	const { long_url } = await c.req.json();
+
+	if (!long_url) {
+		return c.json({ error: 'Invalid input' }, 400);
+	}
+
+	// Generate a random short code
+	const shortCode = Math.random().toString(36).substring(2, 8);
+
+	// Store the long URL with the short code as the key
+	await c.env.URLS.put(shortCode, long_url);
+
+	return c.json({ code: shortCode, url: `https://${c.env.DOMAIN}/${shortCode}` });
+});
+
+// GET route to retrieve the long URL (no authentication required)
+app.get('/:shortCode', async (c) => {
+	const shortCode = c.req.param('shortCode');
+
+	const longUrl = await c.env.URLS.get(shortCode);
+
+	if (!longUrl) {
+		return c.html('<h1>404 Not Found</h1><p>The requested URL was not found on this server.</p>', 404);
+	}
+
+	return c.redirect(longUrl, 302);
+});
+
+// Apply middleware to add "Powered by Hono" header
+app.use('*', poweredBy());
+
+export default app;
