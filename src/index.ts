@@ -18,6 +18,7 @@ import { poweredBy } from 'hono/powered-by';
 const app = new Hono<{ Bindings: Env }>();
 
 // Middleware to check the authentication header for POST requests
+// eslint-disable-next-line
 const authMiddleware = async (c: any, next: any) => {
 	const authHeader = c.req.header('Authorization');
 	const expectedAuthToken = c.env.AUTH_KEY;
@@ -42,7 +43,10 @@ app.post('/', authMiddleware, async (c) => {
 	// Store the long URL with the short code as the key
 	await c.env.URLS.put(shortCode, longUrl);
 
-	return c.json({ code: shortCode, url: `https://${c.env.DOMAIN}/${shortCode}` });
+	return c.json({
+		code: shortCode,
+		url: `https://${c.env.DOMAIN}/${shortCode}`,
+	});
 });
 
 // GET route to retrieve the long URL (no authentication required)
@@ -52,7 +56,10 @@ app.get('/:shortCode', async (c) => {
 	const longUrl = await c.env.URLS.get(shortCode);
 
 	if (!longUrl) {
-		return c.html('<h1>404 Not Found</h1><p>The requested URL was not found on this server.</p>', 404);
+		return c.html(
+			'<h1>404 Not Found</h1><p>The requested URL was not found on this server.</p>',
+			404,
+		);
 	}
 
 	return c.redirect(longUrl, 302);
