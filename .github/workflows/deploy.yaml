@@ -11,6 +11,7 @@ on:
 jobs:
   lint:
     # The type of runner that the job will run on
+    name: Eslint
     runs-on: 'ubuntu-latest'
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -26,7 +27,7 @@ jobs:
   test:
     # The type of runner that the job will run on
     runs-on: 'ubuntu-latest'
-
+    name: Vitest
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +40,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy
+    name: Deploy to Cloudflare
     needs: [lint, test]
     steps:
       - uses: actions/checkout@v4
