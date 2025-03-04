@@ -3,7 +3,6 @@ permissions:
   contents: read
   # Triggers the workflow on push or pull request events but only for the master branch
 on:
-  push:
   pull_request:
     types: [opened, reopened]
 
