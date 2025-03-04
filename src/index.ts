@@ -20,49 +20,49 @@ const app = new Hono<{ Bindings: Env }>();
 // Middleware to check the authentication header for POST requests
 // eslint-disable-next-line
 const authMiddleware = async (c: any, next: any) => {
-	const authHeader = c.req.header('Authorization');
-	const expectedAuthToken = c.env.AUTH_KEY;
+  const authHeader = c.req.header('Authorization');
+  const expectedAuthToken = c.env.AUTH_KEY;
 
-	if (authHeader !== `Bearer ${expectedAuthToken}`) {
-		return c.json({ error: 'Unauthorized' }, 401);
-	}
-	await next();
+  if (authHeader !== `Bearer ${expectedAuthToken}`) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+  await next();
 };
 
 // POST route to create a short URL (with authentication)
 app.post('/', authMiddleware, async (c) => {
-	const { longUrl } = await c.req.json();
-	if (!longUrl) {
-		return c.json({ error: 'Invalid input' }, 400);
-	}
+  const { longUrl } = await c.req.json();
+  if (!longUrl) {
+    return c.json({ error: 'Invalid input' }, 400);
+  }
 
-	console.log('Long Url: ', longUrl);
-	// Generate a random short code
-	const shortCode = Math.random().toString(36).substring(2, 8);
+  console.log('Long Url: ', longUrl);
+  // Generate a random short code
+  const shortCode = Math.random().toString(36).substring(2, 8);
 
-	// Store the long URL with the short code as the key
-	await c.env.URLS.put(shortCode, longUrl);
+  // Store the long URL with the short code as the key
+  await c.env.URLS.put(shortCode, longUrl);
 
-	return c.json({
-		code: shortCode,
-		url: `https://${c.env.DOMAIN}/${shortCode}`,
-	});
+  return c.json({
+    code: shortCode,
+    url: `https://${c.env.DOMAIN}/${shortCode}`,
+  });
 });
 
 // GET route to retrieve the long URL (no authentication required)
 app.get('/:shortCode', async (c) => {
-	const shortCode = c.req.param('shortCode');
+  const shortCode = c.req.param('shortCode');
 
-	const longUrl = await c.env.URLS.get(shortCode);
+  const longUrl = await c.env.URLS.get(shortCode);
 
-	if (!longUrl) {
-		return c.html(
-			'<h1>404 Not Found</h1><p>The requested URL was not found on this server.</p>',
-			404,
-		);
-	}
+  if (!longUrl) {
+    return c.html(
+      '<h1>404 Not Found</h1><p>The requested URL was not found on this server.</p>',
+      404,
+    );
+  }
 
-	return c.redirect(longUrl, 302);
+  return c.redirect(longUrl, 302);
 });
 
 // Apply middleware to add "Powered by Hono" header
