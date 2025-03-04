@@ -1,32 +1,38 @@
 {
-	"name": "ajd-fyi",
-	"version": "0.0.0",
-	"private": true,
-	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"test": "vitest",
-		"cf-typegen": "wrangler types",
-		"lint": "eslint . --ext .ts",
-		"format": "prettier --write ."
-	},
-	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.6.4",
-		"@eslint/compat": "^1.2.7",
-		"@eslint/eslintrc": "^3.3.0",
-		"@eslint/js": "^9.21.0",
-		"@typescript-eslint/eslint-plugin": "^8.26.0",
-		"@typescript-eslint/parser": "^8.26.0",
-		"eslint": "^9.21.0",
-		"eslint-config-prettier": "^10.0.2",
-		"eslint-plugin-prettier": "^5.2.3",
-		"prettier": "^3.5.3",
-		"typescript": "^5.8.2",
-		"vitest": "~2.1.9",
-		"wrangler": "^3.112.0"
-	},
-	"dependencies": {
-		"hono": "^4.7.2"
-	}
+  "name": "ajd-fyi",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "test": "vitest",
+    "cf-typegen": "wrangler types",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write .",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.6.4",
+    "@eslint/compat": "^1.2.7",
+    "@eslint/eslintrc": "^3.3.0",
+    "@eslint/js": "^9.21.0",
+    "@typescript-eslint/eslint-plugin": "^8.26.0",
+    "@typescript-eslint/parser": "^8.26.0",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.0.2",
+    "eslint-plugin-prettier": "^5.2.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "vitest": "~2.1.9",
+    "wrangler": "^3.112.0"
+  },
+  "dependencies": {
+    "hono": "^4.7.2"
+  },
+  "lint-staged": {
+    "*.(ts|mjs)": "eslint --cache --fix"
+  }
 }
