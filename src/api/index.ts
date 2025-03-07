@@ -65,6 +65,10 @@ app.get('/:shortCode', async (c) => {
   return c.redirect(longUrl, 302);
 });
 
+// app.get('*', (c) => {
+//   return c.env.ASSETS.fetch(c.req.raw);
+// });
+
 // Apply middleware to add "Powered by Hono" header
 app.use('*', poweredBy());
 
