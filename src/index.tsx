@@ -14,12 +14,15 @@
 
 import { Hono } from 'hono';
 import { poweredBy } from 'hono/powered-by';
+import { logger } from 'hono/logger';
+import { createMiddleware } from 'hono/factory';
+
+import { Error } from './components';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // Middleware to check the authentication header for POST requests
-// eslint-disable-next-line
-const authMiddleware = async (c: any, next: any) => {
+const authMiddleware = createMiddleware(async (c, next) => {
   const authHeader = c.req.header('Authorization');
   const expectedAuthToken = c.env.AUTH_KEY;
 
@@ -27,7 +30,7 @@ const authMiddleware = async (c: any, next: any) => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
   await next();
-};
+});
 
 // POST route to create a short URL (with authentication)
 app.post('/', authMiddleware, async (c) => {
@@ -36,7 +39,6 @@ app.post('/', authMiddleware, async (c) => {
     return c.json({ error: 'Invalid input' }, 400);
   }
 
-  console.log('Long Url: ', longUrl);
   // Generate a random short code
   const shortCode = Math.random().toString(36).substring(2, 8);
 
@@ -50,22 +52,33 @@ app.post('/', authMiddleware, async (c) => {
 });
 
 // GET route to retrieve the long URL (no authentication required)
-app.get('/:shortCode', async (c) => {
-  const shortCode = c.req.param('shortCode');
-
-  const longUrl = await c.env.URLS.get(shortCode);
+app.get('/:code', async (c) => {
+  const longUrl = await c.env.URLS.get(c.req.param('code'));
 
   if (!longUrl) {
-    return c.html(
-      '<h1>404 Not Found</h1><p>The requested URL was not found on this server.</p>',
-      404,
-    );
+    return c.notFound();
   }
 
   return c.redirect(longUrl, 302);
 });
 
-// Apply middleware to add "Powered by Hono" header
-app.use('*', poweredBy());
+app.notFound((c) => {
+  return c.render(
+    <Error title="404 Not Found" code="404">
+      Sorry that url doesn&apos;t seem to exist.
+    </Error>,
+  );
+});
+
+app.onError((err, c) => {
+  return c.render(
+    <Error title={err.name} code="500">
+      {err.message}
+    </Error>,
+  );
+});
+
+// Apply middleware to add logger and "Powered by Hono" header
+app.use('*', logger(), poweredBy());
 
 export default app;

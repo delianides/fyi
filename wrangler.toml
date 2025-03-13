@@ -1,8 +1,12 @@
 name = "ajd-fyi"
-main = "src/index.ts"
+main = "src/index.tsx"
 compatibility_date = "2025-02-14"
-observability = { enabled = true }
 
+observability = { enabled = true }
 vars = { DOMAIN = "ajd.fyi" }
 kv_namespaces = [{ binding = "URLS", id = "ac9274e00fda4038aeebf9531ca5d69b" }]
 routes = [{ pattern = "ajd.fyi", custom_domain = true }]
+assets = { directory = "public" }
+
+[dev]
+port = 3000
