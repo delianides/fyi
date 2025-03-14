@@ -16,8 +16,12 @@ import { Hono } from 'hono';
 import { poweredBy } from 'hono/powered-by';
 import { logger } from 'hono/logger';
 import { createMiddleware } from 'hono/factory';
+import { customAlphabet } from 'nanoid';
+import { alphanumeric } from 'nanoid-dictionary';
 
 import { Error } from './components';
+
+const shortCodeGenerator = customAlphabet(alphanumeric);
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -40,7 +44,7 @@ app.post('/', authMiddleware, async (c) => {
   }
 
   // Generate a random short code
-  const shortCode = Math.random().toString(36).substring(2, 8);
+  const shortCode = shortCodeGenerator(6);
 
   // Store the long URL with the short code as the key
   await c.env.URLS.put(shortCode, longUrl);
