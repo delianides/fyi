@@ -5,6 +5,10 @@ export default defineWorkersConfig({
     poolOptions: {
       workers: {
         wrangler: { configPath: './wrangler.toml' },
+        main: './src/index.tsx',
+        miniflare: {
+          kvNamespaces: ['URLS'],
+        },
       },
     },
   },
