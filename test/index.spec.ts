@@ -1,34 +1,80 @@
 // test/index.spec.ts
-import {
-  env,
-  createExecutionContext,
-  waitOnExecutionContext,
-  SELF,
-} from 'cloudflare:test';
-import { describe, it, expect } from 'vitest';
-import worker from '../src/index';
+import { nanoid } from 'nanoid';
+import { env, SELF } from 'cloudflare:test';
+import { beforeEach, describe, vi, it, expect } from 'vitest';
+import app from '../src/index';
 
-// For now, you'll need to do something like this to get a correctly-typed
-// `Request` to pass to `worker.fetch()`.
-const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
+type Payload = {
+  code: string;
+  url: string;
+};
 
-describe('Hello World worker', () => {
-  it('responds with Hello World! (unit style)', async () => {
-    const request = new IncomingRequest('http://example.com');
-    // Create an empty context to pass to `worker.fetch()`.
-    const ctx = createExecutionContext();
-    const response = await worker.fetch(request, env, ctx);
-    // Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-    await waitOnExecutionContext(ctx);
-    expect(await response.text()).toMatchInlineSnapshot(
-      `"<html><head><title>404 Not Found</title><link rel="icon" type="image/png" href="/static/favicon-96x96.png" sizes="96x96"/><link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/><link rel="shortcut icon" href="/static/favicon.ico"/><link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png"/><meta name="apple-mobile-web-app-title" content="AJD"/><link rel="manifest" href="/static/site.webmanifest"/><script src="https://unpkg.com/@tailwindcss/browser@4"></script></head><body class="bg-gray-900"><div class="h-screen flex items-center justify-center"><div class="text-center"><h1 class="text-4xl font-mono font-bold text-gray-100">404</h1><h4 class="text-md font-mono font-bold text-gray-300">Sorry that url doesn&#39;t seem to exist.</h4></div></div></body></html>"`,
-    );
+describe('ajd-fyi worker', () => {
+  it.skip('redirect a GET request on the apex', async () => {
+    const res = await app.request('/', {}, env);
+    expect(res.status).toBe(301);
+    expect(res.statusText).toBe('Moved Permanently');
   });
 
-  it('responds with Hello World! (integration style)', async () => {
-    const response = await SELF.fetch('https://example.com');
-    expect(await response.text()).toMatchInlineSnapshot(
-      `"<html><head><title>404 Not Found</title><link rel="icon" type="image/png" href="/static/favicon-96x96.png" sizes="96x96"/><link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/><link rel="shortcut icon" href="/static/favicon.ico"/><link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png"/><meta name="apple-mobile-web-app-title" content="AJD"/><link rel="manifest" href="/static/site.webmanifest"/><script src="https://unpkg.com/@tailwindcss/browser@4"></script></head><body class="bg-gray-900"><div class="h-screen flex items-center justify-center"><div class="text-center"><h1 class="text-4xl font-mono font-bold text-gray-100">404</h1><h4 class="text-md font-mono font-bold text-gray-300">Sorry that url doesn&#39;t seem to exist.</h4></div></div></body></html>"`,
-    );
+  describe('ajd-fyi create link endpoint', () => {
+    it('should respond with respond with 200 and shortlink', async () => {
+      vi.mocked(nanoid).mockReturnValueOnce('ABC123');
+      const response = await SELF.fetch('https://ajd.fyi', {
+        method: 'POST',
+        body: JSON.stringify({ longUrl: 'https://google.com' }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.AUTH_KEY}`,
+        },
+      });
+      const data: Payload = await response.json();
+      expect(response.status).toBe(200);
+      expect(data.code).toBe('ABC123');
+      expect(data.url).toBe(`https://${env.DOMAIN}/ABC123`);
+    });
+
+    it('should respond with error 400 with a bad longUrl', async () => {
+      // Sending a request without the expected body shouldn't match...
+      const response = await SELF.fetch('https://ajd.fyi', {
+        method: 'POST',
+        body: JSON.stringify({ longUrl: 'h/google' }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.AUTH_KEY}`,
+        },
+      });
+      expect(response.status).toBe(400);
+    });
+  });
+
+  describe('ajd-fyi get a link from the kv store', () => {
+    // Get the current list stored in a KV namespace
+    beforeEach(async () => {
+      await env.URLS.put('IuLJ8g', 'https://cloudflare.com');
+      await env.URLS.put('AliK2f', 'https://apple.com');
+      await env.URLS.put('jxZ49f', 'https://hono.dev');
+    });
+
+    it('gets a gets a short link and redirects to cloudflare', async () => {
+      const response = await SELF.fetch('https://ajd.fyi/IuLJ8g');
+      expect(response.redirected).toBeTruthy();
+      expect(response.url).toBe('https://cloudflare.com/');
+    });
+
+    it('gets a gets a short link and redirects to apple', async () => {
+      const response = await SELF.fetch('https://ajd.fyi/AliK2f');
+      expect(response.redirected).toBeTruthy();
+      expect(response.url).toBe('https://apple.com/');
+    });
+
+    it('gets a gets a short link and redirects to hono.dev', async () => {
+      const response = await SELF.fetch('https://ajd.fyi/jxZ49f');
+      expect(response.redirected).toBeTruthy();
+      expect(response.url).toBe('https://hono.dev/');
+    });
+  });
+
+  describe('ajd-fyi delete endpoint Link', () => {
+    it.skip('deletes a link from the kv store');
   });
 });
