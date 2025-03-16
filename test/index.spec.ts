@@ -1,7 +1,6 @@
 // test/index.spec.ts
-import { nanoid } from 'nanoid';
 import { env, SELF } from 'cloudflare:test';
-import { beforeEach, describe, vi, it, expect } from 'vitest';
+import { beforeEach, describe, vi, it, expect, afterEach } from 'vitest';
 import app from '../src/index';
 
 type Payload = {
@@ -9,7 +8,16 @@ type Payload = {
   url: string;
 };
 
+vi.mock('nanoid', () => {
+  return {
+    nanoid: vi.fn(() => 'ABC123'), // Return a fixed string as the mock implementation
+  };
+});
+
 describe('ajd-fyi worker', () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
   it.skip('redirect a GET request on the apex', async () => {
     const res = await app.request('/', {}, env);
     expect(res.status).toBe(301);
@@ -18,7 +26,6 @@ describe('ajd-fyi worker', () => {
 
   describe('ajd-fyi create link endpoint', () => {
     it('should respond with respond with 200 and shortlink', async () => {
-      vi.mocked(nanoid).mockReturnValueOnce('ABC123');
       const response = await SELF.fetch('https://ajd.fyi', {
         method: 'POST',
         body: JSON.stringify({ longUrl: 'https://google.com' }),
