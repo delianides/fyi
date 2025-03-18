@@ -1,4 +1,4 @@
-# ajd-fyi
+# fyi
 
 A very primative URL shortener using Cloudflare Workers, KV, and Hono.
 

@@ -1,4 +1,4 @@
-name = "ajd-fyi"
+name = "fyi"
 main = "src/index.tsx"
 compatibility_date = "2025-02-14"
 
